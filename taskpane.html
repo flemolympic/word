@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Navigator</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f3f3f3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* TOOLBAR */
+    .toolbar {
+      background: #0078d4;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+
+    .url-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    #url-input {
+      flex: 1;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .btn {
+      padding: 6px 10px;
+      background: #005a9e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn:hover { background: #004578; }
+
+    .nav-row { display: flex; gap: 4px; }
+    .nav-row .btn { flex: 1; font-size: 14px; }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      background: #e1e1e1;
+      border-bottom: 2px solid #ccc;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px 4px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab.active {
+      background: white;
+      color: #0078d4;
+      border-bottom-color: #0078d4;
+    }
+
+    /* PANEL */
+    .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .panel.active { display: flex; }
+
+    /* BROWSER PANEL */
+    #frame-wrap {
+      flex: 1;
+      margin: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow: hidden;
+      background: white;
+    }
+
+    #web-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .insert-area {
+      padding: 8px;
+      background: white;
+      border-top: 1px solid #ddd;
+      flex-shrink: 0;
+    }
+
+    #selected-text {
+      width: 100%;
+      height: 60px;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      resize: none;
+      margin-bottom: 6px;
+      font-family: inherit;
+    }
+
+    .btn-row { display: flex; gap: 4px; }
+
+    .btn-insert {
+      flex: 1;
+      padding: 7px 4px;
+      background: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-insert:hover { background: #005a9e; }
+
+    /* FAVORITES PANEL */
+    .fav-section {
+      padding: 10px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .fav-section h3 {
+      font-size: 13px;
+      color: #0078d4;
+      margin-bottom: 8px;
+    }
+
+    .fav-form {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .fav-form input {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .fav-form input:focus { outline: 2px solid #0078d4; border-color: transparent; }
+
+    #add-fav-btn {
+      padding: 7px;
+      background: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    #add-fav-btn:hover { background: #005a9e; }
+
+    #fav-list { list-style: none; }
+
+    .fav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .fav-name {
+      color: #0078d4;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .fav-name:hover { text-decoration: underline; }
+
+    .fav-del {
+      background: #d13438;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .fav-del:hover { background: #a4262c; }
+
+    .empty-msg {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    /* QUICK LINKS PANEL */
+    .tools-section {
+      padding: 10px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .tools-section h3 {
+      font-size: 13px;
+      color: #0078d4;
+      margin-bottom: 8px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-bottom: 16px;
+    }
+
+    .ql-btn {
+      padding: 10px 6px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+    }
+
+    .ql-btn:hover { background: #0078d4; color: white; border-color: #0078d4; }
+
+    .about-box {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #444;
+    }
+
+    .about-box strong { color: #0078d4; }
+
+    /* STATUS BAR */
+    #status {
+      font-size: 11px;
+      padding: 4px 10px;
+      background: #f0f0f0;
+      color: #555;
+      border-top: 1px solid #ddd;
+      flex-shrink: 0;
+      min-height: 22px;
+    }
+
+    #status.ok { color: #107c10; }
+    #status.err { color: #d13438; }
+  </style>
+</head>
+<body>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="url-row">
+      <input id="url-input" type="text" placeholder="Entrez une URL...">
+      <button class="btn" id="go-btn">Aller</button>
+      <button class="btn" id="refresh-btn" title="Actualiser">&#8635;</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn" id="back-btn">&#9664;</button>
+      <button class="btn" id="fwd-btn">&#9654;</button>
+      <button class="btn" id="home-btn">&#8962;</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-panel="browser">&#127760; Navigateur</button>
+    <button class="tab" data-panel="favorites">&#11088; Favoris</button>
+    <button class="tab" data-panel="tools">&#128295; Outils</button>
+  </div>
+
+  <!-- BROWSER PANEL -->
+  <div class="panel active" id="browser-panel">
+    <div id="frame-wrap">
+      <iframe id="web-frame"
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation"
+        allow="fullscreen">
+      </iframe>
+    </div>
+    <div class="insert-area">
+      <textarea id="selected-text" placeholder="Collez ici le texte à insérer dans Word..."></textarea>
+      <div class="btn-row">
+        <button class="btn-insert" id="ins-text-btn">Insérer texte</button>
+        <button class="btn-insert" id="ins-url-btn">Insérer URL</button>
+        <button class="btn-insert" id="ins-link-btn">Insérer lien</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAVORITES PANEL -->
+  <div class="panel" id="favorites-panel">
+    <div class="fav-section">
+      <h3>Mes favoris</h3>
+      <div class="fav-form">
+        <input id="fav-name" type="text" placeholder="Nom du site">
+        <input id="fav-url" type="text" placeholder="https://...">
+        <button id="add-fav-btn">+ Ajouter</button>
+      </div>
+      <ul id="fav-list"></ul>
+    </div>
+  </div>
+
+  <!-- TOOLS PANEL -->
+  <div class="panel" id="tools-panel">
+    <div class="tools-section">
+      <h3>Accès rapide</h3>
+      <div class="quick-grid">
+        <button class="ql-btn" data-url="https://www.google.com">&#128269; Google</button>
+        <button class="ql-btn" data-url="https://fr.wikipedia.org">&#128218; Wikipédia</button>
+        <button class="ql-btn" data-url="https://translate.google.com">&#127758; Traduction</button>
+        <button class="ql-btn" data-url="https://www.youtube.com">&#127909; YouTube</button>
+        <button class="ql-btn" data-url="https://www.github.com">&#128187; GitHub</button>
+        <button class="ql-btn" data-url="https://stackoverflow.com">&#10067; Stack Overflow</button>
+        <button class="ql-btn" data-url="https://www.linkedin.com">&#128188; LinkedIn</button>
+        <button class="ql-btn" data-url="https://www.deepl.com">&#128293; DeepL</button>
+      </div>
+
+      <h3>À propos</h3>
+      <div class="about-box">
+        <strong>Web Navigator v2.0</strong><br>
+        Naviguez sur internet directement dans Word et insérez du contenu dans vos documents en un clic.<br><br>
+        &#10003; Navigation web intégrée<br>
+        &#10003; Gestion des favoris<br>
+        &#10003; Insertion de texte, URL et liens<br>
+        &#10003; 8 sites en accès rapide
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="status">Chargement...</div>
+
+<script>
+  // === STATE ===
+  let favorites = [];
+  let officeReady = false;
+
+  // === OFFICE INIT ===
+  Office.onReady((info) => {
+    if (info.host === Office.HostType.Word) {
+      officeReady = true;
+      setStatus('Prêt', 'ok');
+      loadFavorites();
+      setupListeners();
+      navigate('https://www.google.com');
+    } else {
+      setStatus('Ouvrez ce complément dans Word', 'err');
+    }
+  });
+
+  // === HELPERS ===
+  function setStatus(msg, type) {
+    const s = document.getElementById('status');
+    s.textContent = msg;
+    s.className = type || '';
+  }
+
+  function ensureHttps(url) {
+    url = url.trim();
+    if (!url) return '';
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    return url;
+  }
+
+  function navigate(url) {
+    url = ensureHttps(url);
+    if (!url) return;
+    const frame = document.getElementById('web-frame');
+    frame.src = url;
+    document.getElementById('url-input').value = url;
+  }
+
+  // === LISTENERS ===
+  function setupListeners() {
+    // Navigation
+    document.getElementById('go-btn').onclick = () => navigate(document.getElementById('url-input').value);
+    document.getElementById('url-input').onkeydown = (e) => { if (e.key === 'Enter') navigate(document.getElementById('url-input').value); };
+    document.getElementById('refresh-btn').onclick = () => { const f = document.getElementById('web-frame'); f.src = f.src; };
+    document.getElementById('back-btn').onclick = () => window.history.back();
+    document.getElementById('fwd-btn').onclick = () => window.history.forward();
+    document.getElementById('home-btn').onclick = () => navigate('https://www.google.com');
+
+    // Try to sync URL bar when iframe navigates
+    document.getElementById('web-frame').onload = () => {
+      try {
+        const href = document.getElementById('web-frame').contentWindow.location.href;
+        if (href && href !== 'about:blank') document.getElementById('url-input').value = href;
+      } catch(e) {}
+    };
+
+    // Insertion
+    document.getElementById('ins-text-btn').onclick = insertText;
+    document.getElementById('ins-url-btn').onclick = insertCurrentUrl;
+    document.getElementById('ins-link-btn').onclick = insertHyperlink;
+
+    // Favorites
+    document.getElementById('add-fav-btn').onclick = addFavorite;
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
+        if (tab.dataset.panel === 'browser') navigate(document.getElementById('url-input').value || 'https://www.google.com');
+      };
+    });
+
+    // Quick links
+    document.querySelectorAll('.ql-btn').forEach(btn => {
+      btn.onclick = () => {
+        navigate(btn.dataset.url);
+        document.querySelector('[data-panel="browser"]').click();
+      };
+    });
+
+    // Auto-capture selection in page
+    document.addEventListener('selectionchange', () => {
+      try {
+        const sel = window.getSelection().toString().trim();
+        if (sel) document.getElementById('selected-text').value = sel;
+      } catch(e) {}
+    });
+  }
+
+  // === WORD INSERTION ===
+  async function insertText() {
+    const text = document.getElementById('selected-text').value.trim();
+    if (!text) { setStatus('Aucun texte à insérer', 'err'); return; }
+    if (!officeReady) { setStatus('Word non connecté', 'err'); return; }
+    try {
+      await Word.run(async ctx => {
+        ctx.document.body.insertParagraph(text, Word.InsertLocation.end);
+        await ctx.sync();
+      });
+      setStatus('Texte inséré ✓', 'ok');
+      document.getElementById('selected-text').value = '';
+    } catch(e) {
+      setStatus('Erreur insertion: ' + e.message, 'err');
+    }
+  }
+
+  async function insertCurrentUrl() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) { setStatus('Aucune URL', 'err'); return; }
+    if (!officeReady) { setStatus('Word non connecté', 'err'); return; }
+    try {
+      await Word.run(async ctx => {
+        const para = ctx.document.body.insertParagraph(url, Word.InsertLocation.end);
+        para.font.color = '#0078d4';
+        await ctx.sync();
+      });
+      setStatus('URL insérée ✓', 'ok');
+    } catch(e) {
+      setStatus('Erreur: ' + e.message, 'err');
+    }
+  }
+
+  async function insertHyperlink() {
+    const text = document.getElementById('selected-text').value.trim();
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) { setStatus('Aucune URL', 'err'); return; }
+    if (!officeReady) { setStatus('Word non connecté', 'err'); return; }
+    const label = text || url;
+    try {
+      await Word.run(async ctx => {
+        const range = ctx.document.body.insertParagraph(label, Word.InsertLocation.end);
+        range.hyperlink = url;
+        range.font.color = '#0563c1';
+        range.font.underline = true;
+        await ctx.sync();
+      });
+      setStatus('Lien inséré ✓', 'ok');
+      document.getElementById('selected-text').value = '';
+    } catch(e) {
+      setStatus('Erreur: ' + e.message, 'err');
+    }
+  }
+
+  // === FAVORITES ===
+  function loadFavorites() {
+    try {
+      favorites = JSON.parse(localStorage.getItem('wn_favs') || '[]');
+    } catch(e) {
+      favorites = [];
+    }
+    renderFavorites();
+  }
+
+  function saveFavorites() {
+    localStorage.setItem('wn_favs', JSON.stringify(favorites));
+  }
+
+  function renderFavorites() {
+    const list = document.getElementById('fav-list');
+    list.innerHTML = '';
+    if (!favorites.length) {
+      list.innerHTML = '<li class="empty-msg">Aucun favori pour l\'instant.</li>';
+      return;
+    }
+    favorites.forEach((f, i) => {
+      const li = document.createElement('li');
+      li.className = 'fav-item';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'fav-name';
+      nameSpan.textContent = f.name;
+      nameSpan.onclick = () => {
+        navigate(f.url);
+        document.querySelector('[data-panel="browser"]').click();
+      };
+      const delBtn = document.createElement('button');
+      delBtn.className = 'fav-del';
+      delBtn.textContent = 'Suppr.';
+      delBtn.onclick = () => {
+        favorites.splice(i, 1);
+        saveFavorites();
+        renderFavorites();
+      };
+      li.appendChild(nameSpan);
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
+  }
+
+  function addFavorite() {
+    const name = document.getElementById('fav-name').value.trim();
+    const url = ensureHttps(document.getElementById('fav-url').value);
+    if (!name || !url) { setStatus('Entrez un nom et une URL', 'err'); return; }
+    favorites.push({ name, url });
+    saveFavorites();
+    renderFavorites();
+    document.getElementById('fav-name').value = '';
+    document.getElementById('fav-url').value = '';
+    setStatus('Favori ajouté ✓', 'ok');
+  }
+</script>
+</body>
+</html>
