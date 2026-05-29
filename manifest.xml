@@ -35,7 +35,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="REPLACE_WITH_YOUR_URL/taskpane.html"/>
+    <SourceLocation DefaultValue="https://github.com/flemolympic/word/taskpane.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
